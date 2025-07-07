@@ -104,11 +104,10 @@ async fn product_router(
 }
 
 const DEFAULT_DEPLOYMENT_URL: &str = "localhost:3000";
-
 #[tokio::main]
 async fn main() {
-    let deploy_url =
-        std::env::var("DEPLOYMENT_URL").unwrap_or_else(|_| DEFAULT_DEPLOYMENT_URL.to_string());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr: std::net::SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
 
     let description: Value = json!({
         "name": env!("CARGO_PKG_NAME"),
@@ -118,22 +117,19 @@ async fn main() {
         "repository": env!("CARGO_PKG_REPOSITORY"),
         "license": env!("CARGO_PKG_LICENSE"),
         "usage": {
-            "search_api": format!("{deploy_url}/search/{{product_name}}"),
-            "product_api": format!("{deploy_url}/product/{{product_link_argument}}"),
+            "search_api": "/search/{product_name}",
+            "product_api": "/product/{product_link_argument}",
         }
     });
 
     let app = Router::new()
-        .route(
-            "/",
-            get(|| async move {
-                Response::builder()
-                    .status(StatusCode::OK)
-                    .header("Content-Type", "application/json")
-                    .body(Body::from((description).to_string()))
-                    .unwrap()
-            }),
-        )
+        .route("/", get(|| async move {
+            Response::builder()
+                .status(StatusCode::OK)
+                .header("Content-Type", "application/json")
+                .body(Body::from(description.to_string()))
+                .unwrap()
+        }))
         .route("/search/{*query}", get(search_router))
         .route("/search", get(search_router))
         .route("/search/", get(search_router))
@@ -142,8 +138,8 @@ async fn main() {
             (StatusCode::PERMANENT_REDIRECT, Redirect::permanent("/")).into_response()
         }));
 
-    println!("Starting server on {}", deploy_url);
-
-    let listener = tokio::net::TcpListener::bind(deploy_url).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    println!("🚀 Starting server on {}", addr);
+    axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
+        .await
+        .unwrap();
 }
