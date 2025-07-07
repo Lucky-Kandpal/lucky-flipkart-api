@@ -8,7 +8,7 @@ authors = ["Lucky Kandpal luckykandpal091@gmail.com"]
 license = "MIT OR Apache-2.0"                     # ✅ Optional: dual-license or custom
 
 [dependencies]
-flipkart_scraper = { path = "../flipkart-scraper", features = ["fetch"] }
+flipkart_scraper = { path = "https://github.com/dvishal485/flipkart-scraper", features = ["fetch"] }
 serde = "1.0"
 serde_json = "1.0"
 axum = { version = "0.8.4" }
